@@ -1,7 +1,8 @@
 // Copies entry.png to the harness output directory, validating it first.
 // Node 22, standard library only.
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const MAX_BYTES = 1048576;
 const MAX_SIDE = 1024;
@@ -12,7 +13,10 @@ function fail(message) {
   process.exit(1);
 }
 
-const source = "entry.png";
+// Resolve the image next to this script, not against the working directory:
+// the grader may run node from anywhere, so a bare "entry.png" would fail.
+const here = dirname(fileURLToPath(import.meta.url));
+const source = join(here, "entry.png");
 let data;
 try {
   data = readFileSync(source);
@@ -45,6 +49,7 @@ writeFileSync(outPath, data);
 
 const back = readFileSync(outPath);
 if (!back.equals(data)) {
-  fail(`readback of ${outPath} differs from ${source}`);
+  // The copy must be byte-for-byte identical to the source image.
+  fail(`readback of ${outPath} does not match ${source} byte for byte`);
 }
 console.log(`wrote ${outPath} (${data.length} bytes, ${width}x${height})`);
